@@ -1,0 +1,22 @@
+{
+  "name": "webrtc",
+  "version": "1.0.0",
+  "description": "some webrtc sample code",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/oswystan/webrtc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oswystan/webrtc/issues"
+  },
+  "homepage": "https://github.com/oswystan/webrtc#readme",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}
