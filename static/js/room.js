@@ -78,7 +78,7 @@ function do_pub() {
     var create_offer = function(stream) {
         localstream = stream;
         lv.prop("srcObject", stream);
-        pc.addStream(stream);
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
         pc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
             .then(function(sdp) {
                 pc.setLocalDescription(sdp);
