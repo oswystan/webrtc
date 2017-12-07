@@ -17,24 +17,12 @@ var btn_pub = $("#btn_pub");
 var btn_sub = $("#btn_sub");
 var btn_stop = $("#btn_stop");
 var room = $("#room_id");
-var rtc_cfg = {
-    iceServers: [
-        { urls:[                                                                                                                                                                  
-            "stun:stun.ekiga.net", 
-            // "stun:stun.ideasip.com", 
-            // "stun:stun.schlund.de", 
-            // "stun:stun.voiparound.com", 
-            // "stun:stun.voipbuster.com", 
-            // "stun:stun.voipstunt.com", 
-            // "stun:stun.voxgratia.org", 
-            // "stun:stun.xten.com"
-            ] }
-    ]
-};
+var rtc_cfg = {iceServers: [{ urls:[ "stun:stun.ekiga.net" ] }]};
 var pc = null;
 var ws = new WebSocket('ws://' + window.location.host + '/');
 var candi = [];
 var localstream = null;
+var remotestream = null;
 var role = "puber";
 
 btn_pub.click(do_pub);
@@ -59,23 +47,15 @@ function set_stream(l, r) {
     rv.prop("srcObject", r);
 }
 function sendcmd_pub(sdp) {
-    var msg = {
-        "command": "pub",
-        "sdp": sdp
-    }
+    var msg = { "command": "pub", "sdp": sdp };
     ws.send(JSON.stringify(msg));
 }
 function sendcmd_sub() {
-    var msg = {
-        "command": "sub",
-    };
+    var msg = { "command": "sub" };
     ws.send(JSON.stringify(msg));
 }
 function sendcmd_play(sdp) {
-    var msg = {
-        "command": "play",
-        "sdp": sdp
-    };
+    var msg = { "command": "play", "sdp": sdp };
     ws.send(JSON.stringify(msg));
 }
 
@@ -93,10 +73,7 @@ function do_pub() {
             sendcmd_play(pc.localDescription);
         }
     };
-    var contraints = {
-        audio: true,
-        video: { width: 640, height: 480 }
-    };
+    var contraints = { audio: true, video: { width: 640, height: 480 }};
 
     var create_offer = function(stream) {
         localstream = stream;
@@ -135,9 +112,10 @@ function do_stop() {
         pc.close();
     }
     pc = null;
-    if (localstream) {
-        close_stream(localstream);
-    }
+    if (localstream) close_stream(localstream);
+    if (remotestream) close_stream(remotestream);
+    localstream = null;
+    remotestream = null;
 }
 
 ws.onopen = function(e) {
@@ -159,6 +137,7 @@ ws.onmessage = function(e) {
 
         pc.ontrack = function(e) {
             set_stream(null, e.streams[0]);
+            remotestream = e.streams[0];
         };
     } else if (msg.type === "answer") {
         pc.setRemoteDescription(msg);
@@ -166,4 +145,3 @@ ws.onmessage = function(e) {
 }
 
 /************************************* END **************************************/
-
