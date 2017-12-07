@@ -14,7 +14,16 @@ input[type="text"] {
     padding: 8px 10px;
 }
 video {
-    margin: 20px 6px;
+    margin: 10px 10px;
+}
+table, th, td, tr {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #aaaaaa;
+    border-collapse: collapse;
+}
+table {
+    margin: 10px 0px;
 }
 </style>
 <body>
@@ -22,10 +31,20 @@ video {
     <input id="btn_pub" type="button" value="pub"></input>
     <input id="btn_sub" type="button" value="sub"></input>
     <input id="btn_stop" type="button" value="stop"></input>
-    <div>
-        <video id="local_video" autoplay muted style="width:400px;height:300px"></video>
-        <video id="remote_video" autoplay muted style="width:400px;height:300px"></video>
-    </div>
+    <table>
+        <tr>
+            <td>local:</td>
+            <td>remote:</td>
+        </tr>
+        <tr>
+            <td>
+                <video id="local_video" autoplay muted style="width:400px;height:300px"></video>
+            </td>
+            <td>
+                <video id="remote_video" autoplay muted style="width:400px;height:300px"></video>
+            </td>
+        </tr>
+    </table>
 </body>
 <script src="js/room.js"></script>
 </html>

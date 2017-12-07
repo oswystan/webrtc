@@ -86,17 +86,11 @@ function do_pub() {
     candi = [];
     pc = new RTCPeerConnection(rtc_cfg);
     pc.onicecandidate = function(evt) {
-        if (evt.candidate) {
-            // log(evt.candidate.toJSON());
-            if (evt.candidate.protocol === 'udp') {
-                candi.push(evt.candidate.toJSON());
-            }
-        }else{
-            if (role === "puber") {
-                sendcmd_pub(pc.localDescription);
-            } else if(role === "suber") {
-                sendcmd_play(pc.localDescription);
-            }
+        if (evt.candidate) return;
+        if (role === "puber") {
+            sendcmd_pub(pc.localDescription);
+        } else if(role === "suber") {
+            sendcmd_play(pc.localDescription);
         }
     };
     var contraints = {
@@ -123,10 +117,7 @@ function do_sub() {
     btn_disable(true, true, false);
     pc = new RTCPeerConnection(rtc_cfg);
     pc.onicecandidate = function(evt) {
-        if (evt.candidate) {
-            return;
-        }
-
+        if (evt.candidate) return;
         if(role === "suber") {
             log("send play")
             log(pc.localDescription.toJSON());
