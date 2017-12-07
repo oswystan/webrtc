@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC</title>
+    <script src="vendor/jquery-3.2.1.min.js"></script>
+    <script src="vendor/adapter-6.0.2.js"></script>
+</head>
+
+<style type="text/css">
+input[type="button"] {
+    padding: 8px 36px
+}
+input[type="text"] {
+    padding: 8px 10px;
+}
+video {
+    margin: 20px 6px;
+}
+</style>
+<body>
+    room: <input id="room_id" type="text"></input>
+    <input id="btn_pub" type="button" value="pub"></input>
+    <input id="btn_sub" type="button" value="sub"></input>
+    <input id="btn_stop" type="button" value="stop"></input>
+    <div>
+        <video id="local_video" autoplay muted style="width:400px;height:300px"></video>
+        <video id="remote_video" autoplay muted style="width:400px;height:300px"></video>
+    </div>
+</body>
+<script src="js/room.js"></script>
+</html>

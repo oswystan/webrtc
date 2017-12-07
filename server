@@ -11,11 +11,48 @@
  *********************************************************************************
  */
 
-
+var log = console.log;
 var express = require('express');
 var app = express();
+var expressWs = require('express-ws')(app);
 app.use(express.static('static'));
 app.listen(8080);
+
+var offer = null;
+var answer = null;
+var puber = null
+
+app.ws("/", function(ws, req) {
+    log("new client.");
+
+    ws.on("close", function(e){
+        log("client closed");
+    });
+
+    ws.on("message", function(msg) {
+        var request = JSON.parse(msg);
+        if (request.command === "pub") {
+            offer = request.sdp;
+            puber = ws;
+            log("some one pub, get offer");
+        } else if (request.command === "sub") {
+            if (offer != null) {
+                ws.send(JSON.stringify(offer));
+            } else {
+                log("no one pub");
+            }
+            log("some on sub");
+        } else if (request.command === "play") {
+            log("some one play");
+            answer = request.sdp;
+            if (puber != null) {
+                log("send answer");
+                puber.send(JSON.stringify(answer));
+            }
+        }
+    });
+});
+
 console.log("try: http://localhost:8080");
 
 /************************************* END **************************************/

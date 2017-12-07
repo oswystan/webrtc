@@ -80,7 +80,33 @@ function createStream(contraints, cb) {
 }
 
 function createSendOnlyOffer() {
-    var rtc = new RTCPeerConnection();
+    //stun servers get from 
+    var opts = {
+        iceServers: [
+            { urls:[                                                                                                                                                                  
+                "stun:stun.ekiga.net", 
+                // "stun:stun.ideasip.com", 
+                // "stun:stun.schlund.de", 
+                // "stun:stun.voiparound.com", 
+                // "stun:stun.voipbuster.com", 
+                // "stun:stun.voipstunt.com", 
+                // "stun:stun.voxgratia.org", 
+                // "stun:stun.xten.com"
+                ] }
+        ]
+    };
+    var rtc = new RTCPeerConnection(opts);
+    rtc.onicegatheringstatechange = function(){
+        console.log(rtc.iceGatheringState);
+    };
+    console.log(rtc);
+    rtc.onicecandidate = function(evt) {
+        if (evt.candidate) {
+            console.log(evt.candidate.toJSON());
+        }else{
+            console.log("done...");
+        }
+    };
     var contraints = {
         audio: true,
         video: { width: 640, height: 480 }
@@ -91,13 +117,15 @@ function createSendOnlyOffer() {
             return;
         }
         rtc.addStream(stream);
-        rtc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false}).then(function(sdp){
-            console.log(sdp.toJSON());
-        }).catch(errHandler);
+        rtc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
+            .then(function(sdp){
+                console.log(sdp.toJSON());
+                rtc.setLocalDescription(sdp);
+            }).catch(errHandler);
     });
 }
-
 createSendOnlyOffer();
+
 
 /************************************* END **************************************/
 
