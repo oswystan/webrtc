@@ -25,6 +25,9 @@ table, th, td, tr {
 table {
     margin: 10px 0px;
 }
+.hint {
+    display:inline-block;
+}
 </style>
 <body>
     room: <input id="room_id" type="text"></input>
@@ -33,8 +36,8 @@ table {
     <input id="btn_stop" type="button" value="stop"></input>
     <table>
         <tr>
-            <td>local:</td>
-            <td>remote:</td>
+            <td>local: <div id="local_status" class="hint"></div></td>
+            <td>remote: <div id="remote_status" class="hint"></div></td>
         </tr>
         <tr>
             <td>
