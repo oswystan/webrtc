@@ -37,7 +37,7 @@ function btn_disable(a, b, c) {
     btn_stop.prop("disabled", c);
 }
 function err_handler(e) {
-    log(e);
+    loge(e);
 }
 function close_stream(s) {
     s.getTracks().forEach(function(t) {
@@ -62,38 +62,38 @@ function sendcmd_play(sdp) {
 }
 function set_pc_notify(pc) {
     pc.onconnectionstatechange = function(e) {
-        log("notify=> onconnectionstatechange: " + pc.connectionState);
+        logi("notify=> onconnectionstatechange: " + pc.connectionState);
     };
     pc.oniceconnectionstatechange = function(e){
-        log("notify=> oniceconnectionstatechange: " + pc.iceConnectionState);
+        logi("notify=> oniceconnectionstatechange: " + pc.iceConnectionState);
         rs.html(pc.iceConnectionState);
     };
     pc.onicegatheringstatechange = function(e){
-        log("notify=> onicegatheringstatechange: " + pc.iceGatheringState);
+        logi("notify=> onicegatheringstatechange: " + pc.iceGatheringState);
     };
     pc.onidentityresult = function(e) {
-        log("notify=> onidentityresult: " + e.assertion);
+        logi("notify=> onidentityresult: " + e.assertion);
     };
     pc.onidpassertionerror = function(e) {
-        log("notify=> onidpassertionerror");
-        log(e);
+        logi("notify=> onidpassertionerror");
+        loge(e);
     };
     pc.onidpvalidationerror = function(e) {
-        log("notify=> onidpvalidationerror");
-        log(e);
+        logi("notify=> onidpvalidationerror");
+        loge(e);
     };
     pc.onnegotiationneeded = function(e) {
-        log("notify=> onnegotiationneeded");
+        logi("notify=> onnegotiationneeded");
     };
     pc.onpeeridentity = function(e) {
-        log("notify=> onpeeridentity");
-        log(e);
+        logi("notify=> onpeeridentity");
+        logi(e);
     };
     pc.onremovestream = function(e) {
-        log("notify=> onremovestream: " + e.stream.id);
+        logi("notify=> onremovestream: " + e.stream.id);
     };
     pc.onsignalingstatechange = function(e) {
-        log("notify=> onsignalingstatechange: " + pc.signalingState);
+        logi("notify=> onsignalingstatechange: " + pc.signalingState);
         ls.html(pc.signalingState);
     };
 }
@@ -101,22 +101,22 @@ function set_pc_notify(pc) {
 function do_pub() {
     ls.html("");
     rs.html("");
-    log("");
+    logv("");
     role = "puber";
     btn_disable(true, true, false);
     candi = [];
-    log("flow=> new RTCPeerConnection");
+    logi("flow=> new RTCPeerConnection");
     pc = new RTCPeerConnection(rtc_cfg);
     set_pc_notify(pc);
     pc.onicecandidate = function(evt) {
         if (evt.candidate) return;
         if (role === "puber") {
-            log("flow=> ice gathering finished, then send pub command(with offer sdp) to signal server.");
+            logi("flow=> ice gathering finished, then send pub command(with offer sdp) to signal server.");
             sendcmd_pub(pc.localDescription);
         }
     };
     pc.ontrack = function(e) {
-        console.log("notify=> on track");
+        logi("notify=> on track");
     };
     var contraints = { audio: true, video: { width: 640, height: 480 }};
 
@@ -124,15 +124,15 @@ function do_pub() {
         localstream = stream;
         lv.prop("srcObject", stream);
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-        log("flow=> create offer");
+        logi("flow=> create offer");
         pc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
             .then(function(sdp) {
-                log("flow=> offer created, then set local description")
+                logi("flow=> offer created, then set local description")
                 pc.setLocalDescription(sdp);
             }).catch(err_handler);
     };
 
-    log("flow=> get user media");
+    logi("flow=> get user media");
     md.getUserMedia(contraints).then(create_offer).catch(err_handler);
 }
 
@@ -141,18 +141,18 @@ function do_sub() {
     btn_disable(true, true, false);
     ls.html("");
     rs.html("");
-    log("");
-    log("flow=> new RTCPeerConnection");
+    logv("");
+    logi("flow=> new RTCPeerConnection");
     pc = new RTCPeerConnection(rtc_cfg);
     set_pc_notify(pc);
     pc.onicecandidate = function(evt) {
         if (evt.candidate) return;
         if(role === "suber") {
-            log("flow=> ice gathering finished, then send play command(with answer sdp) to signal server.");
+            logi("flow=> ice gathering finished, then send play command(with answer sdp) to signal server.");
             sendcmd_play(pc.localDescription);
         }
     };
-    log("flow=> send subscribe command to server");
+    logi("flow=> send subscribe command to server");
     sendcmd_sub();
 }
 
@@ -160,11 +160,11 @@ function do_stop() {
     btn_disable(false, false, false);
     set_stream(null, null);
     if (pc && pc.signalingState != "closed") {
-        log("flow=> close RTCPeerConnection");
+        logi("flow=> close RTCPeerConnection");
         pc.close();
     }
     pc = null;
-    log("flow=> close local or remote stream if needed");
+    logi("flow=> close local or remote stream if needed");
     if (localstream) close_stream(localstream);
     if (remotestream) close_stream(remotestream);
     localstream = null;
@@ -172,31 +172,31 @@ function do_stop() {
 }
 
 ws.onopen = function(e) {
-    log("flow=> ws open");
+    logi("flow=> ws open");
 }
 ws.onclose = function(e) {
-    log("flow=> ws close");
+    logw("flow=> ws close");
 }
 ws.onmessage = function(e) {
     var msg = JSON.parse(e.data);
     if (msg.type === "offer") {
-        log("flow=> get offer from signal server, set remote description");
+        logi("flow=> get offer from signal server, set remote description");
         pc.setRemoteDescription(msg).then(function(){
         }).catch(err_handler);
 
-        log("flow=> create answer");
+        logi("flow=> create answer");
         pc.createAnswer().then(function(sdp) {
-            log("flow=> answer created, then set local description");
+            logi("flow=> answer created, then set local description");
             pc.setLocalDescription(sdp);
         }).catch(err_handler);
 
         pc.ontrack = function(e) {
-            log("notify=> new track: " + e.track.kind);
+            logi("notify=> new track: " + e.track.kind);
             set_stream(null, e.streams[0]);
             remotestream = e.streams[0];
         };
     } else if (msg.type === "answer") {
-        log("flow=> get answer from signal server, then set remote description");
+        logi("flow=> get answer from signal server, then set remote description");
         pc.setRemoteDescription(msg);
     }
 }
