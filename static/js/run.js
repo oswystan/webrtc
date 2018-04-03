@@ -80,17 +80,17 @@ function createStream(contraints, cb) {
 }
 
 function createSendOnlyOffer() {
-    //stun servers get from 
+    //stun servers get from
     var opts = {
         iceServers: [
-            { urls:[                                                                                                                                                                  
-                "stun:stun.ekiga.net", 
-                // "stun:stun.ideasip.com", 
-                // "stun:stun.schlund.de", 
-                // "stun:stun.voiparound.com", 
-                // "stun:stun.voipbuster.com", 
-                // "stun:stun.voipstunt.com", 
-                // "stun:stun.voxgratia.org", 
+            { urls:[
+                "stun:stun.ekiga.net",
+                // "stun:stun.ideasip.com",
+                // "stun:stun.schlund.de",
+                // "stun:stun.voiparound.com",
+                // "stun:stun.voipbuster.com",
+                // "stun:stun.voipstunt.com",
+                // "stun:stun.voxgratia.org",
                 // "stun:stun.xten.com"
                 ] }
         ]
@@ -105,6 +105,7 @@ function createSendOnlyOffer() {
             console.log(evt.candidate.toJSON());
         }else{
             console.log("done...");
+            console.log(rtc.localDescription);
         }
     };
     var contraints = {
@@ -116,8 +117,8 @@ function createSendOnlyOffer() {
         if (stream == null) {
             return;
         }
-        rtc.addStream(stream);
-        rtc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
+        // rtc.addStream(stream);
+        rtc.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true})
             .then(function(sdp){
                 console.log(sdp.toJSON());
                 rtc.setLocalDescription(sdp);

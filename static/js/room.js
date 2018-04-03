@@ -19,13 +19,169 @@ var btn_pub = $("#btn_pub");
 var btn_sub = $("#btn_sub");
 var btn_stop = $("#btn_stop");
 var room = $("#room_id");
-var rtc_cfg = {iceServers: [{ urls:[ "stun:stun.ekiga.net" ] }]};
+// var rtc_cfg = {iceServers: [{ urls:[ "stun:stun.ekiga.net" ] }]};
+var rtc_cfg = {};
 var pc = null;
 var ws = new WebSocket('ws://' + window.location.host + '/');
 var candi = [];
 var localstream = null;
 var remotestream = null;
 var role = "puber";
+
+
+class SdpMedia {
+    constructor(t, start, end) {
+        this.type = t;
+        this.start = start;
+        this.end = end;
+    };
+};
+class SdpUtil {
+    constructor() {
+        this.sdplines = [];
+        this.medias = [];
+    };
+
+    parse(sdp) {
+        let lines = sdp.split('\n');
+        let media = null;
+        let j = 0;
+        for(let i=0; i<lines.length; i++, j++) {
+            let line = lines[i].trim();
+            if(line.length === 0) continue;
+
+            this.sdplines.push(line);
+            let matcher = line.match(/m=(\S+)/);
+            if(matcher) {
+                if(media) {
+                    media.end = j-1;
+                    this.medias.push(media);
+                }
+                media = new SdpMedia(matcher[1], j, j);
+            }
+        }
+        if(media) {
+            media.end = this.sdplines.length-1;
+            this.medias.push(media);
+        }
+    };
+
+    setBitRate(type, br) {
+        let i = 0;
+        let j = 0;
+        i = this.medias.findIndex(m=>m.type === type);
+        if(i < 0) {
+            loge("NO media type:", type);
+            return;
+        }
+        let media = this.medias[i];
+        let attr = "b=AS:" + br;
+        for(j=media.start; j<=media.end; j++) {
+            if(this.sdplines[j].indexOf("b=AS:") === 0) {
+                this.sdplines[j] = attr;
+                break;
+            }
+        }
+        if(j>media.end) {
+            this.sdplines.splice(j, 0, attr);
+            media.end++;
+            i++;
+            for(; i<this.medias.length; i++) {
+                this.medias[i].start++;
+                this.medias[i].end++;
+            }
+        }
+    };
+    setAudioChannel(channel) {
+        let idx = this.medias.findIndex(m=> m.type === "audio");
+        if(idx < 0) return;
+        let media = this.medias[idx];
+        let i = 0;
+        let attr = "a=fmtp"
+        for(i=media.start; i<=media.end; i++) {
+            if(this.sdplines[i].indexOf("opus") > 0) {
+                break;
+            }
+        }
+        if(i<=media.end) {
+            //1. get payload type
+            let result = this.sdplines[i].match(/a=rtpmap:(\d+)\sopus\//);
+            if (result.length < 2) return;
+
+            //2. insert new attribute into sdp
+            let stereo = 1;
+            if (channel === 1) {
+                stereo = 0;
+            }
+            let attr = "a=fmtp:" + result[1] + " stereo=" + stereo + ";sprop-stereo=" + stereo;
+            this.sdplines.splice(i, 0, attr);
+
+            //3. change media start and end index
+            media.end++;
+            for(idx=idx+1; idx<this.medias.length; idx++) {
+                this.medias[idx].start++;
+                this.medias[idx].end++;
+            }
+        }
+    }
+    setClipRect(width, height) {
+        let idx = this.medias.findIndex(m=> m.type === "video");
+        if(idx < 0) return;
+        let media = this.medias[idx];
+        let i = 0;
+        let attr = "a=cliprect:0,0," + width + "," + height;
+        for(i=media.start; i<=media.end; i++) {
+            if(this.sdplines[i].indexOf("a=cliprect:") === 0) {
+                this.sdplines[i] = attr;
+                break;
+            }
+        }
+        if(i>media.end) {
+            this.sdplines.splice(i, 0, attr);
+            media.end++;
+            for(idx=idx+1; idx<this.medias.length; idx++) {
+                this.medias[idx].start++;
+                this.medias[idx].end++;
+            }
+        }
+    };
+
+    removeAttr(prefix) {
+        for (let i=0; i<this.sdplines.length; i++) {
+            if (this.sdplines[i].indexOf(prefix) == 0) {
+                this.sdplines.splice(i, 1);
+                break;
+            }
+        }
+    }
+    isacOnly() {
+        let idx = this.medias.findIndex(m=> m.type === "audio");
+        if(idx < 0) return;
+        let media = this.medias[idx];
+        this.sdplines[media.start] = "m=audio 9 UDP/TLS/RTP/SAVPF 103";
+        this.removeAttr("a=rtpmap:111");
+        this.removeAttr("a=rtcp-fb:111");
+        this.removeAttr("a=fmtp:111");
+        this.removeAttr("a=rtpmap:104");
+        this.removeAttr("a=rtpmap:9");
+        this.removeAttr("a=rtpmap:0");
+        this.removeAttr("a=rtpmap:8");
+    }
+    serialize() {
+        return this.sdplines.reduce((a,b)=>a+"\r\n"+b) + "\r\n";
+    };
+    dump() {
+        for(let i=0; i<this.medias.length; i++) {
+            logd(this.medias[i]);
+        }
+        logd("TOTAL LINES:", this.sdplines.length);
+        logd("-----------------------------");
+        this.sdplines.forEach(l=>logd(l));
+        logd("-----------------------------");
+    };
+};
+
+
 
 btn_pub.click(do_p2p);
 btn_sub.click(do_sub);
@@ -171,6 +327,11 @@ function do_p2p() {
         pc3.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
             .then(function(sdp) {
                 logi("pc3.setLocalDescription:", sdp);
+                let sdputil = new SdpUtil();
+                sdputil.parse(sdp.sdp);
+                sdputil.isacOnly();
+                sdp.sdp = sdputil.serialize();
+                logi("create offer 2=>", sdp.sdp);
                 pc3.setLocalDescription(sdp);
             }).catch(err_handler);
     };
@@ -205,6 +366,11 @@ function do_p2p() {
         stream.getTracks().forEach(track => pc1.addTrack(track, stream));
         pc1.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
             .then(function(sdp) {
+                let sdputil = new SdpUtil();
+                sdputil.parse(sdp.sdp);
+                sdputil.isacOnly();
+                sdp.sdp = sdputil.serialize();
+                logi("create offer 1=>", sdp.sdp);
                 pc1.setLocalDescription(sdp);
             }).catch(err_handler);
     };
