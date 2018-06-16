@@ -20,7 +20,7 @@ var btn_sub = $("#btn_sub");
 var btn_stop = $("#btn_stop");
 var room = $("#room_id");
 // var rtc_cfg = {iceServers: [{ urls:[ "stun:stun.ekiga.net" ] }]};
-var rtc_cfg = {};
+var rtc_cfg = {iceServers: []};
 var pc = null;
 var ws = new WebSocket('ws://' + window.location.host + '/');
 var candi = [];
@@ -183,7 +183,7 @@ class SdpUtil {
 
 
 
-btn_pub.click(do_p2p);
+btn_pub.click(do_pub);
 btn_sub.click(do_sub);
 btn_stop.click(do_stop);
 
@@ -259,7 +259,7 @@ function do_pub() {
     rs.html("");
     logv("");
     role = "puber";
-    btn_disable(true, true, false);
+    btn_disable(true, false, false);
     candi = [];
     logi("flow=> new RTCPeerConnection");
     pc = new RTCPeerConnection(rtc_cfg);
@@ -283,7 +283,8 @@ function do_pub() {
         logi("flow=> create offer");
         pc.createOffer({offerToReceiveVideo: false, offerToReceiveAudio: false})
             .then(function(sdp) {
-                logi("flow=> offer created, then set local description")
+                logi("flow=> offer created, then set local description");
+                logd(sdp);
                 pc.setLocalDescription(sdp);
             }).catch(err_handler);
     };
